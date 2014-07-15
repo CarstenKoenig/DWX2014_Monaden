@@ -7,3 +7,7 @@
 .hljs {
   font-size: 140% !important;
 }
+
+img {
+  border: none !important;
+}

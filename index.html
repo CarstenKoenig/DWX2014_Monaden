@@ -36,7 +36,7 @@
 </script>
 
 <!-- For syntax highlighting -->
-  <link rel="stylesheet" href="reveal.js/plugin/highlight/styles/solarized_dark.css">
+  <link rel="stylesheet" href="reveal.js/plugin/highlight/styles/railscasts.css">
 
 
 <!-- If the query includes 'print-pdf', use the PDF print sheet -->
@@ -62,7 +62,7 @@
 <h1>Monaden</h1>
 <h3>Carsten König</h3>
 <p>
-<h4>DWX 2014</h4>
+<h4><a href="https://carstenkoenig.github.io/DWX2014_Monaden">https://carstenkoenig.github.io/DWX2014_Monaden</a></h4>
 </p>
 </section>  
 
@@ -187,25 +187,33 @@ Wenn der innere Block den Rückgabetyp nicht eindeutig bestimmt benötigt der Co
 </section><section id="können-wir-das-eleganter-lösen" class="slide level2">
 <h1>können wir das eleganter lösen?</h1>
 <div class="fragment">
-<p><strong>C# 6</strong> bekommt wahrscheinlich ein <em>monadic null checking</em></p>
+<p><strong>C#</strong> bekommt demnächst wahrscheinlich ein <em>monadic null checking</em></p>
 <pre class="cs"><code>GetCustomer(5)?.Orders()?. ...</code></pre>
 </div>
 </section></section>
-<section><section id="maybe" class="titleslide slide level1"><h1>Maybe</h1></section><section id="my-rant" class="slide level2">
-<h1>my rant</h1>
+<section><section id="maybe" class="titleslide slide level1"><h1>Maybe</h1></section><section id="section-2" class="slide level2">
+<h1></h1>
+<figure>
+<img src="images/rant.jpg" />
+</figure>
 <pre class="cs"><code>Customer GetCustomer(int customerNumber)</code></pre>
 <p>Wenn eine Funktion <strong>partiell</strong> ist, dann sollte sie es auch <em>zugeben</em></p>
-</section><section id="better-...-but" class="slide level2">
-<h1>better ... <em>but</em></h1>
+</section><section id="section-3" class="slide level2">
+<h1></h1>
+<p><em>Sag es im Namen</em></p>
 <pre class="cs"><code>Customer TryGetCustomer(int customerNumber)</code></pre>
-<p>davon <em>merkt</em> der Compiler nichts</p>
-</section><section id="what-about" class="slide level2">
-<h1>what about</h1>
+<div class="fragment">
+<p><strong>aber:</strong> davon <em>merkt</em> der Compiler nichts</p>
+</div>
+</section><section id="section-4" class="slide level2">
+<h1></h1>
+<p><em>Try/Can Pattern</em></p>
 <pre class="cs"><code>bool TryGetCustomer(int customerNumber, out Customer customer)</code></pre>
-<p>wenn das Handling nicht wäre ...</p>
-</section><section id="types-for-the-win" class="slide level2">
-<h1>Types for the win</h1>
-<p>Der Compiler kann mit <strong>Datentypen</strong> umgehen</p>
+<div class="fragment">
+<p><strong>Aber:</strong> <em>imperatives</em> Handling</p>
+</div>
+</section><section id="typen---was-sonst" class="slide level2">
+<h1>Typen - was sonst?</h1>
 <pre class="cs"><code>Maybe&lt;Customer&gt; TryGetCustomer(int customerNumber)</code></pre>
 <pre class="fsharp"><code>type Maybe&lt;&#39;a&gt; =
   | Just of &#39;a
@@ -384,9 +392,9 @@ perm xs = do
   return $ x:xs&#39;</code></pre>
 </section><section id="clinq" class="slide level2">
 <h1>C#/LINQ</h1>
-<pre class="cs"><code>IEnumerable&lt;IEnumerable&lt;a&gt;&gt; Permuationen&lt;a&gt;(IEnumerable&lt;a&gt; items)
+<pre class="cs"><code>IEnumerable&lt;IEnumerable&lt;T&gt;&gt; Permuationen&lt;T&gt;(IEnumerable&lt;T&gt; items)
 {
-    if (!items.Any()) return new[] {new a[] {}};
+    if (!items.Any()) return new[] {new T[] {}};
 
     return
         from h in items
@@ -396,7 +404,7 @@ perm xs = do
 </section><section id="clinq-1" class="slide level2">
 <h1>C#/LINQ</h1>
 <p><strong>Hilfsfunktion</strong></p>
-<pre class="cs"><code>IEnumerable&lt;a&gt; Vor&lt;a&gt;(this a value, IEnumerable&lt;a&gt; rest)
+<pre class="cs"><code>IEnumerable&lt;T&gt; Vor&lt;T&gt;(this T value, IEnumerable&lt;T&gt; rest)
 {
     yield return value;
     foreach (var v in rest)
@@ -722,6 +730,121 @@ State f &gt;&gt;= g =
         let (a,s&#39;) = f.runState s
         (g a).runState s&#39;
     |&gt; mkState</code></pre>
+</section><section id="komposition" class="slide level2">
+<h1>Komposition</h1>
+<p>Problem war ja:</p>
+<pre class="haskell"><code>f :: a -&gt; (State s b)
+g :: b -&gt; (State s c)</code></pre>
+<p>gesucht Operator <code>op</code> mit</p>
+<pre class="haskell"><code>f `op` g :: a -&gt; (State s c)</code></pre>
+</section><section id="implementation" class="slide level2">
+<h1>Implementation</h1>
+<p>Haskell:</p>
+<pre class="haskell"><code>op :: (a -&gt; State s b) -&gt; (b -&gt; State s c) -&gt; (a -&gt; State s c)
+op f g = \a -&gt; f a &gt;&gt;= g</code></pre>
+<p>F#:</p>
+<pre class="fsharp"><code>let op f g =
+    fun a -&gt; bind (f a) g</code></pre>
+</section><section id="übrigens..." class="slide level2">
+<h1>Übrigens...</h1>
+<p>HLint:</p>
+<pre><code>Error: Use &gt;=&gt;
+Found:
+  \ a -&gt; f a &gt;&gt;= g
+Why not:
+  f Control.Monad.&gt;=&gt; g</code></pre>
+<p>das ist die <em>Kleisli</em> Komposition für Monaden ...</p>
+<div class="fragment">
+<p>die ist in Haskell für alle Monaden definiert:</p>
+<pre class="haskell"><code>(&gt;=&gt;) :: Monad m =&gt; (a -&gt; m b) -&gt; (b -&gt; m c) -&gt; (a -&gt; m c)
+f &gt;=&gt; g = \x -&gt; f x &gt;&gt;= g</code></pre>
+</div>
+<div class="fragment">
+<p>in .NET ist das so leider nicht möglich</p>
+</div>
+</section></section>
+<section><section id="gesetze" class="titleslide slide level1"><h1>§ Gesetze §</h1></section><section id="monade-sollte-erfüllen" class="slide level2">
+<h1>Monade sollte erfüllen:</h1>
+<ol type="1">
+<li><strong>Links-Identität</strong>: <code>return a &gt;&gt;= f === f a</code></li>
+<li><strong>Rechts-Identität</strong>: <code>m &gt;&gt;= return === m</code></li>
+<li><strong>Assoziativität</strong>: <code>(m &gt;&gt;= f) &gt;&gt;= g === m &gt;&gt;= (\x -&gt; f x &gt;&gt;= g)</code></li>
+</ol>
+</section><section id="warum" class="slide level2">
+<h1>Warum?</h1>
+<p>rein <em>mathematisch</em> sind diese Gesetze unbedingt nötig um sich Monade zu nennen.</p>
+<p>siehe etwa: <a href="http://yogsototh.github.io/Category-Theory-Presentation/">Category Theory &amp; Programming</a></p>
+<div class="fragment">
+<p><em>praktisch</em> normale Programmiererintuition</p>
+</div>
+</section><section id="rechts-identität" class="slide level2">
+<h1>Rechts-Identität</h1>
+<pre class="haskell"><code>m &gt;&gt;= return === m</code></pre>
+<div class="fragment">
+<p>als Liste</p>
+<pre class="haskell"><code>[ y | x &lt;- xs; y &lt;- [x] ] === xs</code></pre>
+</div>
+<div class="fragment">
+<p>LINQ / C#</p>
+<pre class="cs"><code>return
+   from x in xs
+   from y in new[]{x}
+   select y;</code></pre>
+<p>sollte natürlich das Gleiche wie einfach</p>
+<pre class="cs"><code>return xs;</code></pre>
+<p>sein.</p>
+</div>
+</section><section id="links-identität" class="slide level2">
+<h1>Links-Identität</h1>
+<pre class="haskell"><code>return a &gt;&gt;= f === f a</code></pre>
+<div class="fragment">
+<p>LINQ / C#</p>
+<pre class="cs"><code>return
+   from x in new []{a}
+   from y in f x
+   select y;</code></pre>
+<p>sollte natürlich das Gleiche wie einfach</p>
+<pre class="cs"><code>return f(a);</code></pre>
+<p>sein.</p>
+</div>
+</section><section id="assoziativität-linke-seite" class="slide level2">
+<h1>Assoziativität (linke Seite)</h1>
+<pre class="haskell"><code>(m &gt;&gt;= f) &gt;&gt;= g === m &gt;&gt;= (\x -&gt; f x &gt;&gt;= g)</code></pre>
+<p>LINQ / C#</p>
+<pre class="cs"><code>var zw1 =   
+   from x in xs
+   from y in f(x)
+   select y;
+return
+   from y in zw1
+   from z in g(y)
+   select y;</code></pre>
+</section><section id="assoziativität-rechte-seite" class="slide level2">
+<h1>Assoziativität (rechte Seite)</h1>
+<pre class="haskell"><code>(m &gt;&gt;= f) &gt;&gt;= g === m &gt;&gt;= (\x -&gt; f x &gt;&gt;= g)</code></pre>
+<p>LINQ / C#</p>
+<pre class="cs"><code>Func&lt;X,IEnumerable&lt;Z&gt;&gt; zw1 =
+  x =&gt; from y in f(x)
+       from z in g(y)
+       return z;
+return
+  from x in xs
+  from z in zw1(x)
+  select z;  </code></pre>
+</section><section id="assoziativität" class="slide level2">
+<h1>Assoziativität</h1>
+<p>oder einfach</p>
+<p>LINQ / C#</p>
+<pre class="cs"><code>return
+  from x in xs
+  from y in f(x)
+  from z in g(y)
+  select z;  </code></pre>
+</section><section id="assoziativität-kleisli" class="slide level2">
+<h1>Assoziativität Kleisli</h1>
+<p>und mit <em>Kleisli</em></p>
+<pre class="haskell"><code>(f &gt;=&gt; g) &gt;=&gt; h === f &gt;=&gt; (g &gt;=&gt; h)</code></pre>
+<p>sieht es sogar wie <strong>Assoziativität</strong> aus!</p>
 <aside class="notes">
 <strong>Hänge</strong> ?print-pdf#/ an die URL im Browser an um eine PDF zu erzeugen
 </aside>
